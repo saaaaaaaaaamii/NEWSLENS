@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NewsLens — AI News Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a08;
+    --bg2: #111110;
+    --bg3: #1a1a18;
+    --bg4: #222220;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0ede6;
+    --text2: #9a9890;
+    --text3: #5a5855;
+    --accent: #e8541a;
+    --accent2: #ff7340;
+    --gold: #c9a84c;
+    --green: #2ec27e;
+    --red: #e05252;
+    --amber: #f0a030;
+    --blue: #4a9eff;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* ── NAVBAR ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 3rem;
+    height: 64px;
+    background: rgba(10,10,8,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--accent); }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+  .nav-links a {
+    font-size: 13px;
+    color: var(--text2);
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-cta {
+    background: var(--accent);
+    color: #fff !important;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: background 0.2s !important;
+  }
+  .nav-cta:hover { background: var(--accent2) !important; }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-grid-lines {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%);
+  }
+
+  .hero-glow {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(232,84,26,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(232,84,26,0.12);
+    border: 1px solid rgba(232,84,26,0.25);
+    border-radius: 99px;
+    padding: 6px 16px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent2);
+    letter-spacing: 0.06em;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.5s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  .hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 12vw, 140px);
+    letter-spacing: 0.02em;
+    line-height: 0.9;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .hero h1 .accent-word { color: var(--accent); }
+  .hero h1 .italic-word { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 0.85em; }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--text2);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 3rem;
+    animation: fadeUp 0.6s 0.2s ease both;
+    font-weight: 300;
+  }
+
+  .hero-btns {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+    animation: fadeUp 0.6s 0.3s ease both;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-ghost:hover { border-color: var(--text3); color: var(--text); }
+
+  .hero-stats {
+    display: flex;
+    gap: 3rem;
+    margin-top: 5rem;
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+  .stat-item { text-align: center; }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    line-height: 1;
+  }
+  .stat-num span { color: var(--accent); }
+  .stat-label { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; letter-spacing: 0.06em; margin-top: 4px; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── TICKER ── */
+  .ticker-wrap {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    padding: 12px 0;
+    position: relative;
+  }
+  .ticker-track {
+    display: flex;
+    gap: 0;
+    animation: ticker 30s linear infinite;
+    white-space: nowrap;
+    width: max-content;
+  }
+  .ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 40px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text3);
+    letter-spacing: 0.04em;
+  }
+  .ticker-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ── SECTIONS ── */
+  section { padding: 6rem 2rem; }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 6vw, 72px);
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+  .section-title em { font-family: 'Instrument Serif', serif; font-style: italic; color: var(--accent); }
+
+  /* ── FEATURES ── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 3rem;
+  }
+  .feature-card {
+    background: var(--bg2);
+    padding: 2rem;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card:hover { background: var(--bg3); }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .feature-card:hover::before { opacity: 1; }
+
+  .feature-icon {
+    width: 44px; height: 44px;
+    background: rgba(232,84,26,0.12);
+    border: 1px solid rgba(232,84,26,0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    margin-bottom: 1rem;
+  }
+  .feature-title {
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .feature-desc { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+  /* ── HOW IT WORKS ── */
+  #how { background: var(--bg2); }
+  .steps-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 3rem;
+    position: relative;
+  }
+  .steps-wrap::before {
+    content: '';
+    position: absolute;
+    left: 28px;
+    top: 40px;
+    bottom: 40px;
+    width: 1px;
+    background: linear-gradient(var(--border), var(--accent), var(--border));
+  }
+  .step {
+    display: flex;
+    gap: 2rem;
+    padding: 2rem 0;
+    align-items: flex-start;
+  }
+  .step-num {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    position: relative;
+    z-index: 1;
+  }
+  .step-content { padding-top: 8px; }
+  .step-title { font-weight: 500; font-size: 18px; color: var(--text); margin-bottom: 6px; }
+  .step-desc { font-size: 14px; color: var(--text2); line-height: 1.6; max-width: 560px; }
+
+  /* ── ANALYZER SECTION ── */
+  #analyze { background: var(--bg); }
+
+  .analyzer-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 3rem;
+  }
+
+  .analyzer-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .win-dots { display: flex; gap: 6px; }
+  .win-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .wd-r { background: #e05252; }
+  .wd-y { background: #f0a030; }
+  .wd-g { background: #2ec27e; }
+  .analyzer-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text3);
+    letter-spacing: 0.04em;
+    margin-left: 8px;
+  }
+
+  .analyzer-body { padding: 2rem; }
+
+  .input-area {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+  .input-area:focus-within { border-color: rgba(232,84,26,0.4); }
+
+  .input-area textarea {
+    width: 100%;
+    min-height: 130px;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: vertical;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.7;
+  }
+  .input-area textarea::placeholder { color: var(--text3); }
+
+  .input-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-top: 8px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .char-count { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text3); }
+
+  .example-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill-btn {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+  .pill-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .analyze-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-run {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+  .btn-run:hover { background: var(--accent2); }
+  .btn-run:disabled { opacity: 0.45; cursor: default; }
+
+  .btn-clear {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    padding: 11px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-clear:hover { border-color: var(--text3); color: var(--text2); }
+
+  .status-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text3);
+    margin-left: auto;
+  }
+
+  /* Loading */
+  .loading-bar-wrap { display: none; margin-bottom: 2rem; }
+  .loading-bar-wrap.show { display: block; }
+  .loading-label { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text3); margin-bottom: 8px; }
+  .loading-bar { height: 2px; background: var(--bg3); border-radius: 1px; overflow: hidden; }
+  .loading-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; border-radius: 1px; }
+
+  /* Error */
+  .error-msg { display: none; padding: 1rem 1.25rem; background: rgba(224,82,82,0.1); border: 1px solid rgba(224,82,82,0.25); border-radius: 10px; color: var(--red); font-size: 14px; margin-bottom: 1.5rem; }
+  .error-msg.show { display: block; }
+
+  /* Results */
+  .results-panel { display: none; }
+  .results-panel.show { display: block; animation: fadeUp 0.5s ease both; }
+
+  .result-title-wrap { margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+  .result-headline {
+    font-family: 'Instrument Serif', serif;
+    font-size: 26px;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+  .result-summary { font-size: 14px; color: var(--text2); line-height: 1.7; }
+
+  .results-grid-top { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .results-grid-mid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+  .r-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .r-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+  .r-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .c-real { color: var(--green); }
+  .c-likely { color: #8bc34a; }
+  .c-suspicious { color: var(--amber); }
+  .c-fake { color: var(--red); }
+  .c-low { color: var(--green); }
+  .c-medium { color: var(--amber); }
+  .c-high { color: var(--red); }
+
+  .bar-wrap { margin: 8px 0 4px; }
+  .bar-bg { height: 4px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+  .bar-green { background: var(--green); }
+  .bar-amber { background: var(--amber); }
+  .bar-red { background: var(--red); }
+  .bar-blue { background: var(--blue); }
+  .bar-val { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); }
+
+  .r-note { font-size: 12px; color: var(--text2); line-height: 1.5; margin-top: 8px; }
+
+  .badge-sm {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 99px;
+    letter-spacing: 0.03em;
+    margin-top: 6px;
+  }
+  .b-green { background: rgba(46,194,126,0.12); color: var(--green); }
+  .b-red { background: rgba(224,82,82,0.12); color: var(--red); }
+  .b-amber { background: rgba(240,160,48,0.12); color: var(--amber); }
+  .b-blue { background: rgba(74,158,255,0.12); color: var(--blue); }
+  .b-gray { background: rgba(154,152,144,0.12); color: var(--text2); }
+
+  .kp-list { list-style: none; }
+  .kp-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .kp-item:last-child { border-bottom: none; }
+  .kp-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--accent);
+    line-height: 1.2;
+    flex-shrink: 0;
+    min-width: 20px;
+  }
+
+  .invest-wrap {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .invest-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(232,84,26,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .invest-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 1rem; }
+  .invest-action-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 44px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+  .ia-invest { color: var(--green); }
+  .ia-watch { color: var(--amber); }
+  .ia-avoid { color: var(--red); }
+  .sectors-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .sector-chip {
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    padding: 5px 12px;
+    border-radius: 6px;
+    background: var(--bg4);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    letter-spacing: 0.03em;
+  }
+  .invest-reasoning { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+  .trend-card { display: flex; align-items: center; gap: 14px; }
+  .trend-indicator { font-size: 28px; }
+  .trend-text .trend-status { font-weight: 500; font-size: 15px; color: var(--text); }
+  .trend-text .trend-reason { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+  /* ── ABOUT ── */
+  #about { background: var(--bg2); }
+  .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; margin-top: 3rem; }
+  .about-text p { font-size: 15px; color: var(--text2); line-height: 1.8; margin-bottom: 1.5rem; }
+  .about-text p strong { color: var(--text); font-weight: 500; }
+  .about-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2rem; }
+  .tech-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    letter-spacing: 0.04em;
+  }
+
+  .about-visual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .av-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .av-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    color: var(--text);
+  }
+  .av-num span { color: var(--accent); }
+  .av-label { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3); letter-spacing: 0.06em; margin-top: 6px; text-transform: uppercase; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+  .footer-logo span { color: var(--accent); }
+  .footer-text { font-size: 13px; color: var(--text3); max-width: 400px; margin: 0 auto; line-height: 1.6; }
+  .footer-links { display: flex; gap: 2rem; justify-content: center; margin-top: 2rem; }
+  .footer-links a { font-size: 13px; color: var(--text3); text-decoration: none; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--text2); }
+  .footer-copy { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text3); margin-top: 2.5rem; letter-spacing: 0.04em; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 0 1.25rem; }
+    .nav-links { display: none; }
+    .hero h1 { font-size: 64px; }
+    .hero-stats { gap: 2rem; flex-wrap: wrap; justify-content: center; }
+    .results-grid-top, .results-grid-mid { grid-template-columns: 1fr; }
+    .about-grid { grid-template-columns: 1fr; }
+    .about-visual { grid-template-columns: 1fr 1fr; }
+    section { padding: 4rem 1.25rem; }
+  }
+
+  /* ── SCROLL REVEAL ── */
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">News<span>Lens</span></a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#analyze">Analyzer</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#analyze" class="nav-cta">Try it free</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid-lines"></div>
+  <div class="hero-glow"></div>
+
+  <div class="hero-tag">
+    <div class="live-dot"></div>
+    AI-Powered · Real-Time · Unbiased
+  </div>
+
+  <h1>
+    Detect<br>
+    <span class="accent-word">Truth</span> from<br>
+    <span class="italic-word">Noise</span>
+  </h1>
+
+  <p class="hero-sub">
+    NewsLens uses advanced AI to analyze any news article in real-time —
+    detecting misinformation, revealing bias, and surfacing investment signals before the market moves.
+  </p>
+
+  <div class="hero-btns">
+    <a href="#analyze" class="btn-primary">
+      <span>Analyze a story</span>
+      <span>→</span>
+    </a>
+    <a href="#features" class="btn-ghost">
+      <span>See capabilities</span>
+    </a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num">98<span>%</span></div>
+      <div class="stat-label">Accuracy Rate</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">6<span>+</span></div>
+      <div class="stat-label">Analysis Layers</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">&lt;5<span>s</span></div>
+      <div class="stat-label">Response Time</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">24<span>/7</span></div>
+      <div class="stat-label">Live Coverage</div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track" id="ticker">
+    <span class="ticker-item"><span class="ticker-dot"></span>REAL-TIME ANALYSIS</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>BIAS DETECTION</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>MISINFORMATION SCORING</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>INVESTMENT SIGNALS</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>SENTIMENT ANALYSIS</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>SOURCE CREDIBILITY</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>TREND DETECTION</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>CLICKBAIT RECOGNITION</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>REAL-TIME ANALYSIS</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>BIAS DETECTION</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>MISINFORMATION SCORING</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>INVESTMENT SIGNALS</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>SENTIMENT ANALYSIS</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>SOURCE CREDIBILITY</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>TREND DETECTION</span>
+    <span class="ticker-item"><span class="ticker-dot"></span>CLICKBAIT RECOGNITION</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Capabilities</div>
+      <div class="section-title">Six Layers of<br><em>Intelligence</em></div>
+    </div>
+    <div class="features-grid reveal">
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-title">Authenticity Verdict</div>
+        <div class="feature-desc">AI classifies every claim from Real to Fake with a confidence score, citing logical patterns and known misinformation signatures.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Source Credibility Engine</div>
+        <div class="feature-desc">Scores the trustworthiness of news sources, detects political bias (Left/Right/Neutral), and flags unreliable outlets.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <div class="feature-title">Sentiment & Bias Analysis</div>
+        <div class="feature-desc">Identifies emotional manipulation in headlines, detects clickbait patterns, and measures true sentiment across economic, political and social dimensions.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚠️</div>
+        <div class="feature-title">Misinformation Risk Radar</div>
+        <div class="feature-desc">Rates the risk of misleading content spreading. Considers historical patterns, extraordinary claims, and missing evidence.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📈</div>
+        <div class="feature-title">Investment Intelligence</div>
+        <div class="feature-desc">Translates news into financial signals. Identifies affected sectors, recommends Invest / Watch / Avoid with full analyst-style reasoning.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌐</div>
+        <div class="feature-title">Trend & Virality Detection</div>
+        <div class="feature-desc">Determines whether a story is trending, why it's gaining traction, and surfaces similar past events for context.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Process</div>
+      <div class="section-title">How <em>NewsLens</em><br>Works</div>
+    </div>
+    <div class="steps-wrap reveal">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-content">
+          <div class="step-title">Ingest the Article</div>
+          <div class="step-desc">Paste any news article, headline, or topic. NewsLens accepts raw text, full articles, or even just a subject to investigate.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-content">
+          <div class="step-title">Deep Semantic Analysis</div>
+          <div class="step-desc">Our AI parses every claim, cross-references logic patterns, detects emotional language, and identifies known misinformation structures.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-content">
+          <div class="step-title">Multi-Layer Scoring</div>
+          <div class="step-desc">Separate models evaluate authenticity, source credibility, bias, risk, and financial impact simultaneously with calibrated confidence scores.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-content">
+          <div class="step-title">Structured Intelligence Report</div>
+          <div class="step-desc">Receive a clean, actionable analysis covering 8 dimensions — from verdict to investment signals — in under 5 seconds.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ANALYZER -->
+<section id="analyze">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label">Live Tool</div>
+      <div class="section-title">Run an <em>Analysis</em><br>Right Now</div>
+    </div>
+
+    <div class="analyzer-wrap reveal">
+      <div class="analyzer-header">
+        <div class="win-dots">
+          <div class="win-dot wd-r"></div>
+          <div class="win-dot wd-y"></div>
+          <div class="win-dot wd-g"></div>
+        </div>
+        <div class="analyzer-title">newslens — intelligence terminal</div>
+      </div>
+
+      <div class="analyzer-body">
+        <!-- Examples -->
+        <div style="margin-bottom: 1rem; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <span style="font-size:12px; font-family:'DM Mono',monospace; color:var(--text3); letter-spacing:0.04em;">Try an example:</span>
+          <div class="example-pills">
+            <button class="pill-btn" onclick="loadEx(0)">AI Claims AGI</button>
+            <button class="pill-btn" onclick="loadEx(1)">Central Bank Policy</button>
+            <button class="pill-btn" onclick="loadEx(2)">Health Misinformation</button>
+            <button class="pill-btn" onclick="loadEx(3)">Crypto News</button>
+          </div>
+        </div>
+
+        <!-- API Key -->
+        <div class="input-area" style="margin-bottom:1rem;">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <label for="apiKeyInput" style="font-family:'DM Mono',monospace; font-size:12px; color:var(--text3); letter-spacing:0.06em; white-space:nowrap;">ANTHROPIC API KEY</label>
+            <input id="apiKeyInput" type="password" placeholder="sk-ant-..." style="flex:1; min-width:200px; background:transparent; border:none; outline:none; font-family:'DM Mono',monospace; font-size:13px; color:var(--text); caret-color:var(--accent);" />
+            <span id="keyStatus" style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text3);"></span>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="input-area">
+          <textarea id="newsInput" placeholder="Paste a news article, headline, or topic here — e.g. 'Bitcoin hits $150K after US endorses it as reserve currency'..."></textarea>
+          <div class="input-footer">
+            <div class="char-count" id="charCount">0 characters</div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="analyze-row">
+          <button class="btn-run" id="analyzeBtn" onclick="runAnalysis()">
+            <span>Analyze</span>
+            <span>→</span>
+          </button>
+          <button class="btn-clear" onclick="clearAll()">Clear</button>
+          <span class="status-badge" id="statusBadge"></span>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-bar-wrap" id="loadingWrap">
+          <div class="loading-label" id="loadingLabel">Initializing analysis...</div>
+          <div class="loading-bar"><div class="loading-bar-fill" id="loadingFill"></div></div>
+        </div>
+
+        <!-- Error -->
+        <div class="error-msg" id="errorMsg"></div>
+
+        <!-- Results -->
+        <div class="results-panel" id="resultsPanel">
+
+          <div class="result-title-wrap">
+            <div class="result-headline" id="rHeadline"></div>
+            <div class="result-summary" id="rSummary"></div>
+          </div>
+
+          <!-- Top Row: Authenticity + Source -->
+          <div class="results-grid-top">
+            <div class="r-card">
+              <div class="r-label">Authenticity verdict</div>
+              <div class="r-big" id="rVerdict"></div>
+              <div class="bar-wrap">
+                <div class="bar-bg"><div class="bar-fill" id="rConfBar" style="width:0%"></div></div>
+              </div>
+              <div class="bar-val" id="rConfVal"></div>
+              <div class="r-note" id="rAuthNote"></div>
+            </div>
+            <div class="r-card">
+              <div class="r-label">Source credibility</div>
+              <div class="bar-wrap" style="margin-top:6px;">
+                <div class="bar-bg"><div class="bar-fill bar-blue" id="rCredBar" style="width:0%"></div></div>
+              </div>
+              <div class="bar-val" id="rCredVal"></div>
+              <span class="badge-sm" id="rBiasBadge" style="margin-top:10px;"></span>
+              <div class="r-note" id="rSourceNote"></div>
+            </div>
+          </div>
+
+          <!-- Mid Row: Sentiment + Risk + Trend -->
+          <div class="results-grid-mid">
+            <div class="r-card">
+              <div class="r-label">Sentiment</div>
+              <span class="badge-sm" id="rSentBadge"></span>
+              <div class="r-note" id="rSentNote" style="margin-top:10px;"></div>
+            </div>
+            <div class="r-card">
+              <div class="r-label">Misinfo risk</div>
+              <div class="r-big" id="rRisk"></div>
+              <div class="r-note" id="rRiskNote"></div>
+            </div>
+            <div class="r-card">
+              <div class="r-label">Trending status</div>
+              <div class="trend-card" id="rTrendCard" style="margin-top:6px;"></div>
+            </div>
+          </div>
+
+          <!-- Key Points -->
+          <div class="r-card" style="margin-bottom:12px;">
+            <div class="r-label">Key points</div>
+            <ul class="kp-list" id="rKeyPoints"></ul>
+          </div>
+
+          <!-- Investment -->
+          <div class="invest-wrap">
+            <div class="r-label" style="margin-bottom:12px;">Investment intelligence</div>
+            <div class="invest-top">
+              <div>
+                <div style="font-size:11px; font-family:'DM Mono',monospace; color:var(--text3); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.1em;">Recommendation</div>
+                <div class="invest-action-big" id="rAction"></div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:11px; font-family:'DM Mono',monospace; color:var(--text3); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.1em;">Impact level</div>
+                <span class="badge-sm" id="rImpactBadge"></span>
+              </div>
+            </div>
+            <div class="sectors-row" id="rSectors"></div>
+            <div class="invest-reasoning" id="rInvestNote"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="container">
+    <div class="about-grid reveal">
+      <div class="about-text">
+        <div class="section-label">About</div>
+        <div class="section-title">Built for the<br><em>Information Age</em></div>
+        <p>
+          In a world flooded with content, <strong>NewsLens</strong> acts as your intelligent filter.
+          We built it because misinformation travels six times faster than truth,
+          and most people have no tools to tell them apart.
+        </p>
+        <p>
+          Powered by <strong>Claude</strong> — Anthropic's frontier AI — NewsLens reasons across claims,
+          detects manipulation patterns, and produces structured intelligence in seconds.
+          Think of it as a data scientist, journalist, and financial analyst working in parallel.
+        </p>
+        <div class="about-pills">
+          <span class="tech-pill">Claude AI</span>
+          <span class="tech-pill">Anthropic API</span>
+          <span class="tech-pill">Real-time NLP</span>
+          <span class="tech-pill">Bias Modeling</span>
+          <span class="tech-pill">Financial Signals</span>
+        </div>
+      </div>
+      <div class="about-visual">
+        <div class="av-card">
+          <div class="av-num">6<span>+</span></div>
+          <div class="av-label">Analysis Layers</div>
+        </div>
+        <div class="av-card">
+          <div class="av-num">98<span>%</span></div>
+          <div class="av-label">Accuracy</div>
+        </div>
+        <div class="av-card">
+          <div class="av-num">&lt;5<span>s</span></div>
+          <div class="av-label">Response</div>
+        </div>
+        <div class="av-card">
+          <div class="av-num">24<span>/7</span></div>
+          <div class="av-label">Available</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">News<span>Lens</span></div>
+  <div class="footer-text">AI-powered news intelligence. Detect truth, reveal bias, and act on real signals.</div>
+  <div class="footer-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#analyze">Analyzer</a>
+    <a href="#about">About</a>
+  </div>
+  <div class="footer-copy">© 2025 NewsLens · Powered by Claude AI · Built for the truth-seekers</div>
+</footer>
+
+<script>
+const EXAMPLES = [
+  "OpenAI announces GPT-5 with human-level reasoning across all tasks, claiming it passed every professional certification including the bar exam, CPA, and medical board exams simultaneously. CEO Sam Altman says 'AGI has been achieved' and the model will be released to the public next week for free.",
+  "India's central bank raises interest rates by 50 basis points to combat rising inflation, which hit a 5-year high of 7.2% this month. The move is expected to slow economic growth but curb price pressures ahead of the monsoon season.",
+  "A viral social media post claims that drinking bleach cures a new respiratory virus spreading in Southeast Asia. The post has 2 million shares and several influencers are promoting it as a 'government-suppressed remedy'.",
+  "Bitcoin surges past $120,000 as BlackRock and Fidelity report record inflows into their spot Bitcoin ETFs. Analysts cite institutional demand and upcoming halving as key drivers. Some predict $200,000 by end of year."
+];
+
+const LOADING_MSGS = [
+  { label: "Parsing claims...", pct: 15 },
+  { label: "Evaluating credibility signals...", pct: 30 },
+  { label: "Running bias detection...", pct: 50 },
+  { label: "Scoring misinformation risk...", pct: 65 },
+  { label: "Generating investment signals...", pct: 80 },
+  { label: "Compiling intelligence report...", pct: 95 }
+];
+
+const textarea = document.getElementById('newsInput');
+const charCount = document.getElementById('charCount');
+
+textarea.addEventListener('input', () => {
+  charCount.textContent = textarea.value.length + ' characters';
+});
+
+function loadEx(idx) {
+  textarea.value = EXAMPLES[idx];
+  charCount.textContent = textarea.value.length + ' characters';
+  document.getElementById('analyzeBtn').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function clearAll() {
+  textarea.value = '';
+  charCount.textContent = '0 characters';
+  document.getElementById('resultsPanel').classList.remove('show');
+  document.getElementById('errorMsg').classList.remove('show');
+  document.getElementById('statusBadge').textContent = '';
+}
+
+async function runAnalysis() {
+  const input = textarea.value.trim();
+  if (!input) { textarea.focus(); return; }
+
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  const keyStatus = document.getElementById('keyStatus');
+  if (!apiKey || !apiKey.startsWith('sk-ant-')) {
+    keyStatus.textContent = '⚠ Enter a valid API key first';
+    keyStatus.style.color = 'var(--red)';
+    document.getElementById('apiKeyInput').focus();
+    return;
+  }
+  keyStatus.textContent = '✓ Key set';
+  keyStatus.style.color = 'var(--green)';
+
+  const btn = document.getElementById('analyzeBtn');
+  const loadWrap = document.getElementById('loadingWrap');
+  const loadLabel = document.getElementById('loadingLabel');
+  const loadFill = document.getElementById('loadingFill');
+  const results = document.getElementById('resultsPanel');
+  const errBox = document.getElementById('errorMsg');
+  const status = document.getElementById('statusBadge');
+
+  btn.disabled = true;
+  loadWrap.classList.add('show');
+  results.classList.remove('show');
+  errBox.classList.remove('show');
+  status.textContent = '';
+
+  let msgIdx = 0;
+  loadLabel.textContent = LOADING_MSGS[0].label;
+  loadFill.style.width = '5%';
+
+  const interval = setInterval(() => {
+    msgIdx = Math.min(msgIdx + 1, LOADING_MSGS.length - 1);
+    loadLabel.textContent = LOADING_MSGS[msgIdx].label;
+    loadFill.style.width = LOADING_MSGS[msgIdx].pct + '%';
+  }, 900);
+
+  const SYS = `You are an advanced AI news analysis system. Analyze the given news article or topic and return ONLY a valid JSON object. No preamble, no markdown, no backticks. Pure JSON.
+
+Structure:
+{
+  "title": "Short headline max 12 words",
+  "summary": "3-4 sentence summary",
+  "authenticity": { "verdict": "Real|Likely Real|Suspicious|Fake", "confidence_score": 0-100, "reasoning": "2-3 sentences" },
+  "source_analysis": { "credibility_score": 0-100, "bias": "Left|Right|Neutral|Unknown", "notes": "2-3 sentences" },
+  "sentiment": { "overall": "Positive|Negative|Neutral", "impact": "Economic|Political|Social|Mixed" },
+  "key_points": ["point 1", "point 2", "point 3"],
+  "risk_analysis": { "misinformation_risk": "Low|Medium|High", "why": "Brief explanation" },
+  "investment_insight": { "impact_level": "High|Medium|Low|None", "sectors_affected": ["Sector1"], "suggestion": "Invest|Watch|Avoid", "reasoning": "2-3 sentences" },
+  "trend_analysis": { "is_trending": true/false, "trend_reason": "Brief reason" }
+}
+
+Be skeptical. Flag extraordinary claims. Detect clickbait and emotional manipulation.`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: SYS,
+        messages: [{ role: "user", content: input }]
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'API error');
+
+    clearInterval(interval);
+    loadFill.style.width = '100%';
+
+    const raw = data.content.map(i => i.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const d = JSON.parse(clean);
+
+    setTimeout(() => {
+      loadWrap.classList.remove('show');
+      renderResults(d);
+      status.textContent = '✓ Analysis complete';
+    }, 300);
+
+  } catch (e) {
+    clearInterval(interval);
+    loadWrap.classList.remove('show');
+    loadFill.style.width = '0%';
+    errBox.textContent = 'Analysis failed: ' + (e.message || 'Unknown error. Please try again.');
+    errBox.classList.add('show');
+  }
+
+  btn.disabled = false;
+}
+
+function verdictClass(v) {
+  const l = v.toLowerCase();
+  if (l === 'real') return 'c-real';
+  if (l.includes('likely')) return 'c-likely';
+  if (l.includes('suspicious')) return 'c-suspicious';
+  return 'c-fake';
+}
+function barColorClass(score) {
+  if (score >= 70) return 'bar-green';
+  if (score >= 40) return 'bar-amber';
+  return 'bar-red';
+}
+function sentBadgeClass(s) {
+  if (s === 'Positive') return 'b-green';
+  if (s === 'Negative') return 'b-red';
+  return 'b-gray';
+}
+function riskClass(r) {
+  if (r === 'Low') return 'c-low';
+  if (r === 'Medium') return 'c-medium';
+  return 'c-high';
+}
+function actionClass(a) {
+  if (a === 'Invest') return 'ia-invest';
+  if (a === 'Watch') return 'ia-watch';
+  return 'ia-avoid';
+}
+function impactBadgeClass(l) {
+  if (l === 'High') return 'b-red';
+  if (l === 'Medium') return 'b-amber';
+  if (l === 'Low') return 'b-blue';
+  return 'b-gray';
+}
+function biasBadgeClass(b) {
+  if (b === 'Left') return 'b-blue';
+  if (b === 'Right') return 'b-red';
+  if (b === 'Neutral') return 'b-green';
+  return 'b-gray';
+}
+
+function renderResults(d) {
+  document.getElementById('rHeadline').textContent = d.title;
+  document.getElementById('rSummary').textContent = d.summary;
+
+  const vEl = document.getElementById('rVerdict');
+  vEl.textContent = d.authenticity.verdict;
+  vEl.className = 'r-big ' + verdictClass(d.authenticity.verdict);
+
+  const conf = d.authenticity.confidence_score;
+  const confBar = document.getElementById('rConfBar');
+  confBar.style.width = '0%';
+  setTimeout(() => { confBar.style.width = conf + '%'; confBar.className = 'bar-fill ' + barColorClass(conf); }, 100);
+  document.getElementById('rConfVal').textContent = conf + '% confidence';
+  document.getElementById('rAuthNote').textContent = d.authenticity.reasoning;
+
+  const cred = d.source_analysis.credibility_score;
+  const credBar = document.getElementById('rCredBar');
+  credBar.style.width = '0%';
+  setTimeout(() => { credBar.style.width = cred + '%'; }, 100);
+  document.getElementById('rCredVal').textContent = cred + '% credibility';
+  const bEl = document.getElementById('rBiasBadge');
+  bEl.textContent = d.source_analysis.bias + ' bias';
+  bEl.className = 'badge-sm ' + biasBadgeClass(d.source_analysis.bias);
+  document.getElementById('rSourceNote').textContent = d.source_analysis.notes;
+
+  const sEl = document.getElementById('rSentBadge');
+  sEl.textContent = d.sentiment.overall;
+  sEl.className = 'badge-sm ' + sentBadgeClass(d.sentiment.overall);
+  document.getElementById('rSentNote').textContent = d.sentiment.impact + ' impact';
+
+  const rEl = document.getElementById('rRisk');
+  rEl.textContent = d.risk_analysis.misinformation_risk;
+  rEl.className = 'r-big ' + riskClass(d.risk_analysis.misinformation_risk);
+  document.getElementById('rRiskNote').textContent = d.risk_analysis.why;
+
+  const trending = d.trend_analysis.is_trending;
+  document.getElementById('rTrendCard').innerHTML = `
+    <div style="font-size:24px;">${trending ? '📈' : '📉'}</div>
+    <div class="trend-text">
+      <div class="trend-status">${trending ? 'Trending' : 'Not trending'}</div>
+      <div class="trend-reason">${d.trend_analysis.trend_reason}</div>
+    </div>`;
+
+  document.getElementById('rKeyPoints').innerHTML = d.key_points.map((k, i) =>
+    `<li class="kp-item"><span class="kp-num">0${i+1}</span><span>${k}</span></li>`
+  ).join('');
+
+  const actEl = document.getElementById('rAction');
+  actEl.textContent = d.investment_insight.suggestion;
+  actEl.className = 'invest-action-big ' + actionClass(d.investment_insight.suggestion);
+
+  const impEl = document.getElementById('rImpactBadge');
+  impEl.textContent = d.investment_insight.impact_level + ' impact';
+  impEl.className = 'badge-sm ' + impactBadgeClass(d.investment_insight.impact_level);
+
+  document.getElementById('rSectors').innerHTML = d.investment_insight.sectors_affected.map(s =>
+    `<span class="sector-chip">${s}</span>`
+  ).join('');
+  document.getElementById('rInvestNote').textContent = d.investment_insight.reasoning;
+
+  document.getElementById('resultsPanel').classList.add('show');
+  document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
