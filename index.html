@@ -956,13 +956,11 @@
           </div>
         </div>
 
-        <!-- API Key -->
-        <div class="input-area" style="margin-bottom:1rem;">
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <label for="apiKeyInput" style="font-family:'DM Mono',monospace; font-size:12px; color:var(--text3); letter-spacing:0.06em; white-space:nowrap;">ANTHROPIC API KEY</label>
-            <input id="apiKeyInput" type="password" placeholder="sk-ant-..." style="flex:1; min-width:200px; background:transparent; border:none; outline:none; font-family:'DM Mono',monospace; font-size:13px; color:var(--text); caret-color:var(--accent);" />
-            <span id="keyStatus" style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text3);"></span>
-          </div>
+        <!-- Status -->
+        <div style="margin-bottom:1rem; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span style="font-family:'DM Mono',monospace; font-size:11px; color:var(--text3); letter-spacing:0.06em;">POWERED BY</span>
+          <span style="font-family:'DM Mono',monospace; font-size:11px; color:var(--accent); letter-spacing:0.06em;">POLLINATIONS AI — FREE &amp; NO KEY NEEDED</span>
+          <span id="keyStatus" style="font-family:'DM Mono',monospace; font-size:11px; color:var(--green); margin-left:auto;">● ready</span>
         </div>
 
         <!-- Input -->
@@ -1171,17 +1169,7 @@ async function runAnalysis() {
   const input = textarea.value.trim();
   if (!input) { textarea.focus(); return; }
 
-  const apiKey = document.getElementById('apiKeyInput').value.trim();
   const keyStatus = document.getElementById('keyStatus');
-  if (!apiKey || !apiKey.startsWith('sk-ant-')) {
-    keyStatus.textContent = '⚠ Enter a valid API key first';
-    keyStatus.style.color = 'var(--red)';
-    document.getElementById('apiKeyInput').focus();
-    return;
-  }
-  keyStatus.textContent = '✓ Key set';
-  keyStatus.style.color = 'var(--green)';
-
   const btn = document.getElementById('analyzeBtn');
   const loadWrap = document.getElementById('loadingWrap');
   const loadLabel = document.getElementById('loadingLabel');
@@ -1195,6 +1183,8 @@ async function runAnalysis() {
   results.classList.remove('show');
   errBox.classList.remove('show');
   status.textContent = '';
+  keyStatus.textContent = '⟳ analyzing...';
+  keyStatus.style.color = 'var(--amber)';
 
   let msgIdx = 0;
   loadLabel.textContent = LOADING_MSGS[0].label;
@@ -1221,34 +1211,28 @@ Structure:
   "trend_analysis": { "is_trending": true/false, "trend_reason": "Brief reason" }
 }
 
-Be skeptical. Flag extraordinary claims. Detect clickbait and emotional manipulation.`;
+Be skeptical. Flag extraordinary claims. Detect clickbait and emotional manipulation. Return ONLY raw JSON, nothing else.`;
+
+  const fullPrompt = SYS + "\n\nNews to analyze: " + input;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
-        system: SYS,
-        messages: [{ role: "user", content: input }]
-      })
-    });
+    // Use text.pollinations.ai GET endpoint - free, no key needed
+    const encoded = encodeURIComponent(fullPrompt);
+    const url = "https://text.pollinations.ai/" + encoded + "?model=openai&json=true";
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error?.message || 'API error');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Request failed with status " + res.status);
+
+    const raw = await res.text();
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const jsonMatch = clean.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Could not parse AI response. Please try again.');
+    const d = JSON.parse(jsonMatch[0]);
 
     clearInterval(interval);
     loadFill.style.width = '100%';
-
-    const raw = data.content.map(i => i.text || '').join('');
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const d = JSON.parse(clean);
+    keyStatus.textContent = '✓ done';
+    keyStatus.style.color = 'var(--green)';
 
     setTimeout(() => {
       loadWrap.classList.remove('show');
@@ -1260,6 +1244,8 @@ Be skeptical. Flag extraordinary claims. Detect clickbait and emotional manipula
     clearInterval(interval);
     loadWrap.classList.remove('show');
     loadFill.style.width = '0%';
+    keyStatus.textContent = '✗ error';
+    keyStatus.style.color = 'var(--red)';
     errBox.textContent = 'Analysis failed: ' + (e.message || 'Unknown error. Please try again.');
     errBox.classList.add('show');
   }
